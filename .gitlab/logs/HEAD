@@ -1,0 +1,3 @@
+0000000000000000000000000000000000000000 5b73db0d4f30bf75e3bdca949878f65e27baeb5d Mustafa <mustafa.alhasan.2020@gmail.com> 1748863274 +0300	clone: from https://gitlab.com/devs5195830/software-development-pipeline/wave_dashboard.git
+5b73db0d4f30bf75e3bdca949878f65e27baeb5d fcb9fc8b0a6cd24758e9aa347af706ce94f8582c Mustafa <mustafa.alhasan.2020@gmail.com> 1748863331 +0300	commit: v1.0 of wave dashboard
+fcb9fc8b0a6cd24758e9aa347af706ce94f8582c 045eb7fb857c88534513beecc580da7e6c76a193 Mustafa <mustafa.alhasan.2020@gmail.com> 1748951485 +0300	commit: Login, tokens, notification, reports are implemented
