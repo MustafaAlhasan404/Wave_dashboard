@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, Flag, RefreshCcw, X, User, Calendar, AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +33,7 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
   const reportId = unwrappedParams.id;
   
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [report, setReport] = useState<Report | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -64,7 +65,23 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
   }, [reportId]);
 
   const handleBack = () => {
-    router.push('/dashboard/reports');
+    // Get the filter parameters from the URL
+    const search = searchParams.get("search");
+    const status = searchParams.get("status");
+    
+    // Build the URL with preserved filters
+    const params = new URLSearchParams();
+    if (search) {
+      params.set("search", search);
+    }
+    if (status) {
+      params.set("status", status);
+    }
+    
+    // Navigate back to reports list with filters
+    const queryString = params.toString();
+    const url = `/dashboard/reports${queryString ? `?${queryString}` : ''}`;
+    router.push(url);
   };
 
   const formatDate = (dateString: string) => {
@@ -114,7 +131,7 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
       if (response.success) {
         toast.success("Report deleted successfully");
         // Navigate back to reports list
-        router.push('/dashboard/reports');
+        handleBack();
       } else {
         toast.error("Failed to delete report");
         setIsDeleting(false);

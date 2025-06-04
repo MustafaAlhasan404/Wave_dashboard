@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,28 +19,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Edit, MoreVertical, RefreshCcw, Trash } from "lucide-react";
+import { Edit, MoreVertical, RefreshCcw, Trash, Bookmark, BookmarkCheck } from "lucide-react";
 import { toast } from "sonner";
+import { NewsItem, newsApi } from "@/lib/api/news";
+import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
 
 interface NewsPostCardProps {
-  post: {
-    id: string;
-    title: string;
-    excerpt: string;
-    content: string;
-    author: string;
-    date: string;
-    category: string;
-    status: "published" | "draft";
-  };
+  post: NewsItem;
   onViewDetails?: () => void;
+  onSaveToggle?: (id: string, saved: boolean) => void;
 }
 
-export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
+export function NewsPostCard({ post, onViewDetails, onSaveToggle }: NewsPostCardProps) {
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [isSaved, setIsSaved] = useState(post.isSaved);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleDelete = () => {
     setIsDeleting(true);
@@ -65,6 +61,46 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
     }, 1500);
   };
 
+  const handleSaveToggle = async () => {
+    setIsSaving(true);
+    try {
+      const newSavedState = !isSaved;
+      const response = await newsApi.saveNews(post.id, newSavedState);
+      
+      if (response.success) {
+        setIsSaved(newSavedState);
+        toast.success(newSavedState ? "News saved to your bookmarks" : "News removed from your bookmarks");
+        if (onSaveToggle) {
+          onSaveToggle(post.id, newSavedState);
+        }
+      } else {
+        toast.error("Failed to update bookmark status");
+      }
+    } catch (error) {
+      toast.error("An error occurred while updating bookmark status");
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const formattedDate = post.publishedAt ? 
+    formatDistanceToNow(new Date(post.publishedAt), { addSuffix: true }) : 
+    "Unknown date";
+
+  const statusColor = {
+    published: "default",
+    draft: "outline",
+    archived: "secondary"
+  }[post.status] as "default" | "outline" | "secondary" | "destructive";
+
+  // Function to determine credibility badge variant
+  const getCredibilityBadgeVariant = () => {
+    if (post.credibilityScore > 0.7) return "default";
+    if (post.credibilityScore > 0.4) return "outline";
+    return "destructive";
+  };
+
   return (
     <>
       <Card>
@@ -73,47 +109,73 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
             <div>
               <CardTitle className="text-xl">{post.title}</CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1">
-                <span className="text-xs">{post.date}</span>
+                <span className="text-xs">{formattedDate}</span>
                 <span className="text-xs">•</span>
                 <span className="text-xs">{post.category}</span>
                 <span className="text-xs">•</span>
-                <span className="text-xs">By {post.author}</span>
+                <span className="text-xs">By {post.source.name}</span>
               </CardDescription>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-4 w-4" />
-                  <span className="sr-only">Open menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => router.push(`/dashboard/news/${post.id}`)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleResendToAI()}>
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  Resend to AI
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleSaveToggle}
+                disabled={isSaving}
+                title={isSaved ? "Remove from bookmarks" : "Save to bookmarks"}
+              >
+                {isSaved ? (
+                  <BookmarkCheck className="h-4 w-4" />
+                ) : (
+                  <Bookmark className="h-4 w-4" />
+                )}
+                <span className="sr-only">
+                  {isSaved ? "Remove from bookmarks" : "Save to bookmarks"}
+                </span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-4 w-4" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => router.push(`/dashboard/news/${post.id}`)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleResendToAI()}>
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Resend to AI
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground line-clamp-3">{post.excerpt}</p>
+          <div className="mb-4 flex items-center gap-2">
+            <Badge variant={statusColor}>{post.status}</Badge>
+            {post.fakeVoice && (
+              <Badge variant="destructive">Fake Voice</Badge>
+            )}
+            <Badge variant={getCredibilityBadgeVariant()}>
+              Score: {Math.round(post.credibilityScore * 100)}%
+            </Badge>
+          </div>
         </CardContent>
         <CardFooter className="flex justify-between">
           <div className="text-xs text-muted-foreground">
-            Status: <span className="font-medium capitalize">{post.status}</span>
+            Source: <span className="font-medium">{post.source.name}</span>
           </div>
           <Button variant="outline" size="sm" onClick={onViewDetails}>
             View Details

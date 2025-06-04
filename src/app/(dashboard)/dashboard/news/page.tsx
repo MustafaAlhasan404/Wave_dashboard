@@ -1,85 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NewsPostCard } from "@/components/news/news-post-card";
-import { ArrowLeft, Edit, Plus, RefreshCcw, Trash } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Edit, Plus, RefreshCcw, Trash } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-
-// Define the NewsPost type
-interface NewsPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  author: string;
-  date: string;
-  category: string;
-  status: "published" | "draft";
-}
-
-// Mock data for news posts
-const mockPosts: NewsPost[] = [
-  {
-    id: "1",
-    title: "New Feature Launch: AI-Powered Content Suggestions",
-    excerpt: "We're excited to announce the launch of our new AI-powered content suggestion feature that helps you create more engaging content for your audience.",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl.\n\nNullam euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl.\n\nPellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.",
-    author: "Admin User",
-    date: "2023-06-01",
-    category: "Product Updates",
-    status: "published",
-  },
-  {
-    id: "2",
-    title: "How to Optimize Your Content for Better Engagement",
-    excerpt: "Learn how to optimize your content to drive better engagement with your audience and improve your conversion rates.",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl.\n\nNullam euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl.\n\nPellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.",
-    author: "Employee User",
-    date: "2023-05-28",
-    category: "Best Practices",
-    status: "published",
-  },
-  {
-    id: "3",
-    title: "Upcoming Maintenance Schedule",
-    excerpt: "We'll be performing scheduled maintenance on our servers next week. Here's what you need to know about potential downtime.",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl.\n\nNullam euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl.\n\nPellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.",
-    author: "Admin User",
-    date: "2023-05-25",
-    category: "Announcements",
-    status: "published",
-  },
-  {
-    id: "4",
-    title: "Draft: New User Onboarding Guide",
-    excerpt: "A comprehensive guide to help new users get started with our platform and make the most of all available features.",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl.\n\nNullam euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl.\n\nPellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.",
-    author: "Employee User",
-    date: "2023-05-20",
-    category: "Guides",
-    status: "draft",
-  },
-];
+import { NewsItem, NewsPaginationResponse, newsApi } from "@/lib/api/news";
+import { formatDistanceToNow } from "date-fns";
 
 export default function NewsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedPost, setSelectedPost] = useState<NewsPost | null>(null);
+  const [selectedPost, setSelectedPost] = useState<NewsItem | null>(null);
   const [isResending, setIsResending] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [posts, setPosts] = useState<NewsItem[]>([]);
+  
+  // Fetch news posts with pagination
+  useEffect(() => {
+    const fetchNews = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const response = await newsApi.getNews(currentPage, 10);
+        
+        if (response.success && response.data) {
+          setPosts(response.data.news);
+          setTotalPages(response.data.pagination.totalPages);
+        } else {
+          setError(response.message || "Failed to fetch news posts");
+          toast.error("Failed to fetch news posts");
+        }
+      } catch (err) {
+        console.error("Error fetching news:", err);
+        setError("An error occurred while fetching news posts");
+        toast.error("An error occurred while fetching news posts");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchNews();
+  }, [currentPage]);
 
   // Filter posts based on search query, category, and status
-  const filteredPosts = mockPosts.filter((post) => {
-    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredPosts = posts.filter((post) => {
+    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory = categoryFilter === "all" || post.category === categoryFilter;
     const matchesStatus = statusFilter === "all" || post.status === statusFilter;
@@ -87,10 +67,11 @@ export default function NewsPage() {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const categories = Array.from(new Set(mockPosts.map((post) => post.category)));
+  // Get unique categories from posts
+  const categories = Array.from(new Set(posts.map((post) => post.category)));
 
   const handleViewDetails = (postId: string) => {
-    const post = mockPosts.find(p => p.id === postId);
+    const post = posts.find(p => p.id === postId);
     if (post) {
       setSelectedPost(post);
       // Scroll to top to show the selected post
@@ -128,6 +109,109 @@ export default function NewsPage() {
     }, 1000);
   };
 
+  const handleSaveToggle = (id: string, saved: boolean) => {
+    // Update the post in the local state
+    setPosts(prevPosts => 
+      prevPosts.map(post => 
+        post.id === id ? { ...post, isSaved: saved } : post
+      )
+    );
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Generate pagination buttons
+  const renderPaginationButtons = () => {
+    const buttons = [];
+    const maxButtons = 5; // Maximum number of page buttons to show
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxButtons) {
+      startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+    
+    // First page button
+    if (startPage > 1) {
+      buttons.push(
+        <Button 
+          key="first" 
+          variant={currentPage === 1 ? "default" : "outline"} 
+          size="icon"
+          onClick={() => handlePageChange(1)}
+        >
+          1
+        </Button>
+      );
+      
+      // Ellipsis if there's a gap
+      if (startPage > 2) {
+        buttons.push(
+          <span key="ellipsis1" className="px-2">...</span>
+        );
+      }
+    }
+    
+    // Page buttons
+    for (let i = startPage; i <= endPage; i++) {
+      buttons.push(
+        <Button 
+          key={i} 
+          variant={currentPage === i ? "default" : "outline"} 
+          size="icon"
+          onClick={() => handlePageChange(i)}
+        >
+          {i}
+        </Button>
+      );
+    }
+    
+    // Last page button
+    if (endPage < totalPages) {
+      // Ellipsis if there's a gap
+      if (endPage < totalPages - 1) {
+        buttons.push(
+          <span key="ellipsis2" className="px-2">...</span>
+        );
+      }
+      
+      buttons.push(
+        <Button 
+          key="last" 
+          variant={currentPage === totalPages ? "default" : "outline"} 
+          size="icon"
+          onClick={() => handlePageChange(totalPages)}
+        >
+          {totalPages}
+        </Button>
+      );
+    }
+    
+    return buttons;
+  };
+
+  const formattedDate = (dateString: string) => {
+    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+  };
+
   return (
     <div className="flex flex-col gap-6 relative">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -158,29 +242,62 @@ export default function NewsPage() {
                   <div>
                     <CardTitle className="text-xl">{selectedPost.title}</CardTitle>
                     <CardDescription className="flex items-center gap-2 mt-1">
-                      <span>{selectedPost.date}</span>
+                      <span>{formattedDate(selectedPost.publishedAt)}</span>
                       <span>•</span>
                       <span>{selectedPost.category}</span>
                       <span>•</span>
-                      <span>By {selectedPost.author}</span>
+                      <span>By {selectedPost.source.name}</span>
                     </CardDescription>
                   </div>
                 </div>
-                <Badge variant={selectedPost.status === "published" ? "default" : "outline"}>
+                <Badge variant={
+                  selectedPost.status === "published" ? "default" : 
+                  selectedPost.status === "draft" ? "outline" : "secondary"
+                }>
                   {selectedPost.status}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="py-6">
               <div className="prose prose-sm dark:prose-invert max-w-none">
-                <h3 className="text-lg font-medium mb-2">Summary</h3>
-                <p className="text-muted-foreground mb-6">{selectedPost.excerpt}</p>
+                <h3 className="text-lg font-medium mb-2">Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Source</p>
+                    <p>{selectedPost.source.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Credibility Score</p>
+                    <p>{Math.round(selectedPost.credibilityScore * 100)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Fake Voice Detection</p>
+                    <p>{selectedPost.fakeVoice ? "Detected" : "Not Detected"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Category</p>
+                    <p>{selectedPost.category}</p>
+                  </div>
+                </div>
                 
-                <h3 className="text-lg font-medium mb-2">Full Content</h3>
-                <div className="whitespace-pre-line">
-                  {selectedPost.content.split('\n\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4">{paragraph}</p>
-                  ))}
+                <h3 className="text-lg font-medium mb-2">Source Information</h3>
+                <div className="flex items-center gap-4 mb-6">
+                  {selectedPost.source.image && (
+                    <img 
+                      src={selectedPost.source.image} 
+                      alt={selectedPost.source.name} 
+                      className="w-16 h-16 object-cover rounded-md"
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium">{selectedPost.source.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      <a href={selectedPost.source.link} target="_blank" rel="noopener noreferrer" className="underline">
+                        {selectedPost.source.link}
+                      </a>
+                    </p>
+                    <p className="text-sm">{selectedPost.source._count.sourceFollowings} followers</p>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -249,67 +366,110 @@ export default function NewsPage() {
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="published">Published</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        <Tabs defaultValue="grid" className="w-full">
-          <TabsList className="w-full sm:w-auto">
-            <TabsTrigger value="grid" className="flex-1 sm:flex-initial">Grid</TabsTrigger>
-            <TabsTrigger value="list" className="flex-1 sm:flex-initial">List</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="grid" className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPosts.map((post) => (
-                <NewsPostCard 
-                  key={post.id} 
-                  post={post} 
-                  onViewDetails={() => handleViewDetails(post.id)}
-                />
-              ))}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-destructive">{error}</p>
+            <Button variant="outline" className="mt-4" onClick={() => setCurrentPage(1)}>
+              Try Again
+            </Button>
+          </div>
+        ) : (
+          <>
+            <Tabs defaultValue="grid" className="w-full">
+              <TabsList className="w-full sm:w-auto">
+                <TabsTrigger value="grid" className="flex-1 sm:flex-initial">Grid</TabsTrigger>
+                <TabsTrigger value="list" className="flex-1 sm:flex-initial">List</TabsTrigger>
+              </TabsList>
               
-              {filteredPosts.length === 0 && (
-                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-muted-foreground">No news posts found matching your filters.</p>
-                  <Button variant="outline" className="mt-4" onClick={() => {
-                    setSearchQuery("");
-                    setCategoryFilter("all");
-                    setStatusFilter("all");
-                  }}>
-                    Clear Filters
-                  </Button>
+              <TabsContent value="grid" className="mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredPosts.map((post) => (
+                    <NewsPostCard 
+                      key={post.id} 
+                      post={post} 
+                      onViewDetails={() => handleViewDetails(post.id)}
+                      onSaveToggle={handleSaveToggle}
+                    />
+                  ))}
+                  
+                  {filteredPosts.length === 0 && (
+                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+                      <p className="text-muted-foreground">No news posts found matching your filters.</p>
+                      <Button variant="outline" className="mt-4" onClick={() => {
+                        setSearchQuery("");
+                        setCategoryFilter("all");
+                        setStatusFilter("all");
+                      }}>
+                        Clear Filters
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="list" className="mt-4">
-            <div className="flex flex-col gap-4">
-              {filteredPosts.map((post) => (
-                <NewsPostCard 
-                  key={post.id} 
-                  post={post}
-                  onViewDetails={() => handleViewDetails(post.id)}
-                />
-              ))}
+              </TabsContent>
               
-              {filteredPosts.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-muted-foreground">No news posts found matching your filters.</p>
-                  <Button variant="outline" className="mt-4" onClick={() => {
-                    setSearchQuery("");
-                    setCategoryFilter("all");
-                    setStatusFilter("all");
-                  }}>
-                    Clear Filters
-                  </Button>
+              <TabsContent value="list" className="mt-4">
+                <div className="flex flex-col gap-4">
+                  {filteredPosts.map((post) => (
+                    <NewsPostCard 
+                      key={post.id} 
+                      post={post}
+                      onViewDetails={() => handleViewDetails(post.id)}
+                      onSaveToggle={handleSaveToggle}
+                    />
+                  ))}
+                  
+                  {filteredPosts.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <p className="text-muted-foreground">No news posts found matching your filters.</p>
+                      <Button variant="outline" className="mt-4" onClick={() => {
+                        setSearchQuery("");
+                        setCategoryFilter("all");
+                        setStatusFilter("all");
+                      }}>
+                        Clear Filters
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+              </TabsContent>
+            </Tabs>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                {renderPaginationButtons()}
+                
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

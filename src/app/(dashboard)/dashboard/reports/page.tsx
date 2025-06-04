@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,11 +41,13 @@ import {
 
 export default function ReportsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [reports, setReports] = useState<Report[]>([]);
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "all");
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
@@ -54,25 +56,26 @@ export default function ReportsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Fetch reports from the API
-  useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        setIsLoading(true);
-        const response = await reportsApi.getAllReports();
-        
-        if (response.success && response.data) {
-          setReports(response.data.reports);
-        } else {
-          toast.error("Failed to fetch reports");
-        }
-      } catch (error) {
-        console.error("Error fetching reports:", error);
-        toast.error("Error loading reports. Please try again.");
-      } finally {
-        setIsLoading(false);
+  const fetchReports = async () => {
+    try {
+      setIsLoading(true);
+      const response = await reportsApi.getAllReports();
+      
+      if (response.success && response.data) {
+        setReports(response.data.reports);
+      } else {
+        toast.error("Failed to fetch reports");
       }
-    };
-    
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      toast.error("Error loading reports. Please try again.");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchReports();
   }, []);
 
@@ -92,9 +95,35 @@ export default function ReportsPage() {
     setFilteredReports(filtered);
   }, [reports, searchQuery, statusFilter]);
 
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchQuery) {
+      params.set("search", searchQuery);
+    }
+    if (statusFilter !== "all") {
+      params.set("status", statusFilter);
+    }
+    
+    // Update URL without refreshing the page
+    const url = params.toString() ? `?${params.toString()}` : "/dashboard/reports";
+    router.push(url, { scroll: false });
+  }, [searchQuery, statusFilter, router]);
+
   const handleViewReport = (reportId: string) => {
-    // Navigate to the report detail page
-    router.push(`/dashboard/reports/${reportId}`);
+    // Create URL with current filters preserved
+    const params = new URLSearchParams();
+    if (searchQuery) {
+      params.set("search", searchQuery);
+    }
+    if (statusFilter !== "all") {
+      params.set("status", statusFilter);
+    }
+    
+    // Navigate to the report detail page with filters in the URL
+    const queryString = params.toString();
+    const url = `/dashboard/reports/${reportId}${queryString ? `?${queryString}` : ''}`;
+    router.push(url);
   };
 
   const getStatusBadge = (status: string) => {
@@ -197,6 +226,17 @@ export default function ReportsPage() {
     setIsDeleteDialogOpen(true);
   };
 
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchReports();
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    router.push('/dashboard/reports', { scroll: false });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -231,13 +271,25 @@ export default function ReportsPage() {
             variant="ghost"
             size="icon"
             className="h-9 w-9"
-            onClick={() => {
-              setSearchQuery("");
-              setStatusFilter("all");
-            }}
+            onClick={handleClearFilters}
             disabled={!searchQuery && statusFilter === "all"}
+            title="Clear filters"
           >
-            <RefreshCcw className="h-4 w-4" />
+            <X className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9"
+            onClick={handleRefresh}
+            disabled={isRefreshing || isLoading}
+            title="Refresh reports"
+          >
+            {isRefreshing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCcw className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -327,10 +379,7 @@ export default function ReportsPage() {
                   variant="ghost"
                   size="sm"
                   className="mt-2"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setStatusFilter("all");
-                  }}
+                  onClick={handleClearFilters}
                 >
                   Clear filters
                 </Button>
