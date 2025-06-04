@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +39,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export default function ReportsPage() {
+// Create a client component that uses useSearchParams
+function ReportsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [reports, setReports] = useState<Report[]>([]);
@@ -531,5 +532,33 @@ export default function ReportsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="h-6 w-48 bg-muted rounded animate-pulse"></div>
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-[150px] bg-muted rounded animate-pulse"></div>
+            <div className="h-9 w-[200px] bg-muted rounded animate-pulse"></div>
+            <div className="h-9 w-9 bg-muted rounded animate-pulse"></div>
+            <div className="h-9 w-9 bg-muted rounded animate-pulse"></div>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {Array(5)
+            .fill(0)
+            .map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+            ))}
+        </div>
+      </div>
+    }>
+      <ReportsPageContent />
+    </Suspense>
   );
 } 

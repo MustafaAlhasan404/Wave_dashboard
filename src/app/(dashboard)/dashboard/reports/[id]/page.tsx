@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, Flag, RefreshCcw, X, User, Calendar, AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,11 +27,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export default function ReportDetailPage({ params }: { params: { id: string } }) {
-  // Unwrap params using React.use()
-  const unwrappedParams = React.use(params as any) as { id: string };
-  const reportId = unwrappedParams.id;
-  
+// Create a client component that uses useSearchParams
+function ReportDetailContent({ reportId }: { reportId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [report, setReport] = useState<Report | null>(null);
@@ -458,5 +455,30 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
             </TabsContent>
           </Tabs>
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function ReportDetailPage({ params }: { params: { id: string } }) {
+  // Unwrap params using React.use()
+  const unwrappedParams = React.use(params as any) as { id: string };
+  const reportId = unwrappedParams.id;
+  
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+          <div className="space-y-2">
+            <div className="h-6 w-48 bg-muted rounded animate-pulse"></div>
+            <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
+          </div>
+        </div>
+        
+        <div className="h-96 bg-muted rounded animate-pulse"></div>
+      </div>
+    }>
+      <ReportDetailContent reportId={reportId} />
+    </Suspense>
   );
 } 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -142,7 +143,7 @@ export default function NewsPage() {
     const maxButtons = 5; // Maximum number of page buttons to show
     
     let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    const endPage = Math.min(totalPages, startPage + maxButtons - 1);
     
     // Adjust start page if we're near the end
     if (endPage - startPage + 1 < maxButtons) {
@@ -283,10 +284,12 @@ export default function NewsPage() {
                 <h3 className="text-lg font-medium mb-2">Source Information</h3>
                 <div className="flex items-center gap-4 mb-6">
                   {selectedPost.source.image && (
-                    <img 
+                    <Image 
                       src={selectedPost.source.image} 
-                      alt={selectedPost.source.name} 
-                      className="w-16 h-16 object-cover rounded-md"
+                      alt={selectedPost.source.name}
+                      width={64}
+                      height={64}
+                      className="object-cover rounded-md"
                     />
                   )}
                   <div>
