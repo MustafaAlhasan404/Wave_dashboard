@@ -67,15 +67,17 @@ export function ShadcnLineChart2({
         <CardTitle>{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-1">
         <ChartContainer config={chartConfig}>
           <ResponsiveContainer width="100%" height={height}>
             <RechartsLineChart
               accessibilityLayer
               data={data}
               margin={{
-                left: 12,
-                right: 12,
+                top: 8,
+                left: 20,
+                right: 20,
+                bottom: 8,
               }}
             >
               <CartesianGrid vertical={false} />
@@ -96,6 +98,10 @@ export function ShadcnLineChart2({
                 stroke={`var(--color-${dataKey})`}
                 strokeWidth={2}
                 dot={false}
+                isAnimationActive={true}
+                animationDuration={1500}
+                animationBegin={200}
+                animationEasing="ease-in-out"
               />
             </RechartsLineChart>
           </ResponsiveContainer>
