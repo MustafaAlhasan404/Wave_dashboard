@@ -61,8 +61,51 @@ export function ShadcnLineChart2({
     },
   } satisfies ChartConfig;
 
+  // Calculate evenly spaced grid points that are higher in the chart
+  const calculateGridPoints = () => {
+    const points = [];
+    const numLines = 4;
+    const step = height / (numLines + 1);
+    
+    for (let i = 1; i <= numLines; i++) {
+      // Adjust this multiplier to move grid up or down
+      // Lower values move grid up, higher values move grid down
+      const position = step * i * 0.8; 
+      points.push(position);
+    }
+    
+    return points;
+  };
+
   return (
     <Card className={className}>
+      <style jsx global>{`
+        /* Override Recharts animation for line */
+        .recharts-line-curve {
+          stroke-dasharray: 2000;
+          stroke-dashoffset: 2000;
+          animation: draw 1.5s ease-in-out forwards;
+        }
+        
+        @keyframes draw {
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
+        
+        /* Delay dot appearance */
+        .recharts-line .recharts-line-dot {
+          opacity: 0;
+          animation: fadeDot 0.3s ease-in-out 1.2s forwards;
+        }
+        
+        @keyframes fadeDot {
+          to {
+            opacity: 1;
+          }
+        }
+      `}</style>
+      
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
@@ -74,34 +117,49 @@ export function ShadcnLineChart2({
               accessibilityLayer
               data={data}
               margin={{
-                top: 8,
+                top: 20,
                 left: 20,
                 right: 20,
-                bottom: 8,
+                bottom: 20,
               }}
             >
-              <CartesianGrid vertical={false} />
+              <CartesianGrid 
+                vertical={false} 
+                horizontalPoints={calculateGridPoints()}
+                stroke="var(--grid-line-color)"
+                strokeWidth={1}
+                strokeDasharray="3 3" 
+              />
               <XAxis
                 dataKey={xAxisKey}
                 tickLine={false}
-                axisLine={false}
+                axisLine={{ stroke: 'var(--foreground)', opacity: 0.3 }}
                 tickMargin={8}
+                stroke="var(--foreground)"
                 tickFormatter={(value) => typeof value === 'string' ? value.slice(0, 3) : value}
               />
               <ChartTooltip
-                cursor={false}
+                cursor={{ stroke: 'var(--foreground)', strokeOpacity: 0.5, strokeWidth: 1 }}
                 content={<ChartTooltipContent hideLabel valueLabel={valueLabel} />}
               />
               <Line
                 dataKey={dataKey}
                 type="natural"
                 stroke={`var(--color-${dataKey})`}
-                strokeWidth={2}
-                dot={false}
-                isAnimationActive={true}
-                animationDuration={1500}
-                animationBegin={200}
-                animationEasing="ease-in-out"
+                strokeWidth={3}
+                dot={{
+                  stroke: `var(--color-${dataKey})`,
+                  strokeWidth: 2,
+                  r: 4,
+                  fill: "var(--background)"
+                }}
+                activeDot={{
+                  stroke: `var(--color-${dataKey})`,
+                  strokeWidth: 2,
+                  r: 6,
+                  fill: "var(--background)"
+                }}
+                isAnimationActive={false}
               />
             </RechartsLineChart>
           </ResponsiveContainer>

@@ -1,16 +1,24 @@
 /* Custom chart styles for shadcn UI design */
 :root {
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --grid-line-color: rgba(0, 0, 0, 0.2);
 }
 
 .dark {
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.2);
+  --grid-line-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Recharts customization */
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {
-  stroke-opacity: 0.2;
+  stroke: var(--grid-line-color) !important;
+  stroke-opacity: 1 !important;
+  stroke-width: 1px !important;
+}
+
+.recharts-cartesian-grid {
+  opacity: 1 !important;
 }
 
 .recharts-tooltip-cursor {

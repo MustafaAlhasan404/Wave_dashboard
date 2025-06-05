@@ -6,6 +6,7 @@ import { BarChart3, ChartPieIcon, FileText, TrendingUp, Users } from "lucide-rea
 import { ShadcnLineChart2 } from "@/components/charts";
 import { NewsItem, newsApi } from "@/lib/api/news";
 import { formatDistanceToNow, format, subMonths } from "date-fns";
+import "@/app/charts.css";
 
 export default function DashboardPage() {
   const [isAdmin, setIsAdmin] = useState(true);
