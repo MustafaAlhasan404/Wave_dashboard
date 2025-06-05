@@ -8,6 +8,24 @@ import { NewsItem, newsApi } from "@/lib/api/news";
 import { formatDistanceToNow, format, subMonths } from "date-fns";
 import "@/app/charts.css";
 
+// Data cache to prevent inconsistent data
+const CACHE_KEY = "dashboard_news_data";
+const CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour in milliseconds
+
+interface CachedData {
+  timestamp: number;
+  data: {
+    newsData: NewsItem[];
+    totalNews: number;
+    categoryStats: {name: string, count: number}[];
+    statusStats: {name: string, count: number}[];
+    monthlyStats: {month: string, count: number}[];
+    recentNews: NewsItem[];
+    credibilityAvg: number;
+    monthlyTotal: number;
+  };
+}
+
 export default function DashboardPage() {
   const [isAdmin, setIsAdmin] = useState(true);
   const [newsData, setNewsData] = useState<NewsItem[]>([]);
@@ -28,10 +46,61 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Function to load data from cache
+  const loadFromCache = (): CachedData | null => {
+    if (typeof window === 'undefined') return null;
+    
+    const cachedDataString = localStorage.getItem(CACHE_KEY);
+    if (!cachedDataString) return null;
+    
+    try {
+      const cachedData: CachedData = JSON.parse(cachedDataString);
+      const now = Date.now();
+      
+      // Check if cache is still valid (not expired)
+      if (now - cachedData.timestamp < CACHE_EXPIRY) {
+        return cachedData;
+      }
+    } catch (error) {
+      console.error("Error parsing cached data:", error);
+    }
+    
+    return null;
+  };
+
+  // Function to save data to cache
+  const saveToCache = (data: CachedData['data']) => {
+    if (typeof window === 'undefined') return;
+    
+    const cachedData: CachedData = {
+      timestamp: Date.now(),
+      data
+    };
+    
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cachedData));
+  };
+
   // Fetch news data
   useEffect(() => {
     const fetchNews = async () => {
       setIsLoading(true);
+      
+      // Try to load from cache first
+      const cachedData = loadFromCache();
+      if (cachedData) {
+        console.log("Using cached dashboard data");
+        setNewsData(cachedData.data.newsData);
+        setTotalNews(cachedData.data.totalNews);
+        setCategoryStats(cachedData.data.categoryStats);
+        setStatusStats(cachedData.data.statusStats);
+        setRecentNews(cachedData.data.recentNews);
+        setMonthlyStats(cachedData.data.monthlyStats);
+        setCredibilityAvg(cachedData.data.credibilityAvg);
+        setMonthlyTotal(cachedData.data.monthlyTotal);
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         // Fetch with a large limit to get most news items for stats
         const response = await newsApi.getNews(1, 100);
@@ -109,25 +178,13 @@ export default function DashboardPage() {
             }
           });
           
-          // Convert to array and reverse to show oldest to newest
-          const monthlyData = Object.entries(monthlyCounts).map(([month, count]) => ({
-            month,
-            count
-          }));
-          
-          // Sort by month chronologically (oldest first)
-          const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const sortedMonthlyData = [...monthlyData].sort((a, b) => {
-            return monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month);
-          });
-          
           // Get last 6 months in chronological order
           const currentMonthIndex = today.getMonth();
           const last6MonthsOrdered = [];
           
           for (let i = 5; i >= 0; i--) {
             const monthIndex = (currentMonthIndex - i + 12) % 12;
-            const monthName = monthOrder[monthIndex];
+            const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][monthIndex];
             last6MonthsOrdered.push({
               month: monthName,
               count: monthlyCounts[monthName] || 0
@@ -139,8 +196,21 @@ export default function DashboardPage() {
           
           // Calculate average credibility score
           const totalCredibility = news.reduce((sum, item) => sum + item.credibilityScore, 0);
-          const avgCredibility = (totalCredibility / news.length) * 100;
-          setCredibilityAvg(Math.round(avgCredibility * 10) / 10); // Round to 1 decimal place
+          const avgCredibility = news.length > 0 ? (totalCredibility / news.length) * 100 : 0;
+          const roundedCredibility = Math.round(avgCredibility * 10) / 10; // Round to 1 decimal place
+          setCredibilityAvg(roundedCredibility);
+          
+          // Save all processed data to cache
+          saveToCache({
+            newsData: news,
+            totalNews: response.data.pagination.total,
+            categoryStats: categoryData,
+            statusStats: statusData,
+            monthlyStats: last6MonthsOrdered,
+            recentNews: recentItems.slice(0, 5),
+            credibilityAvg: roundedCredibility,
+            monthlyTotal: totalLast6Months
+          });
         }
       } catch (error) {
         console.error("Error fetching news data:", error);
