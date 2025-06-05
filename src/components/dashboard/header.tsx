@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Bell, Menu, Moon, Sun } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { toast } from "sonner";
 
@@ -71,6 +71,7 @@ export function Header({ isAdmin }: HeaderProps) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0">
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <Sidebar isAdmin={isAdmin} />
         </SheetContent>
       </Sheet>

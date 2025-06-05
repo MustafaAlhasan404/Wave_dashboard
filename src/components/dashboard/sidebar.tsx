@@ -12,6 +12,7 @@ import {
   Settings,
   Users,
   Flag,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,13 @@ export function Sidebar({ isAdmin }: SidebarProps) {
       icon: Flag,
       href: "/dashboard/reports",
       active: pathname === "/dashboard/reports" || pathname.startsWith("/dashboard/reports/"),
+    },
+    {
+      label: "Add Employee",
+      icon: UserPlus,
+      href: "/dashboard/employees/add",
+      active: pathname === "/dashboard/employees/add",
+      adminOnly: true,
     },
     {
       label: "Notifications",

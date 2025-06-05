@@ -290,12 +290,38 @@ export const authApi = {
     if (response.success && response.data) {
       console.log("Login successful, storing tokens and user data");
       
+      // Check if user has valid roles for dashboard (ADMIN or EMPLOYEE only)
+      if (response.data.user && response.data.user.roles) {
+        const validRoles = ['ADMIN', 'EMPLOYEE'];
+        const hasValidRole = response.data.user.roles.some(role => 
+          validRoles.includes(role)
+        );
+        
+        if (!hasValidRole) {
+          // Log without using error to avoid console errors
+          console.log("Access validation: User does not have dashboard access privileges");
+          return {
+            success: false,
+            status: 403,
+            message: "You don't have permission to access the dashboard. Only admin and employee roles are allowed.",
+            data: null as any
+          } as ApiResponse<AuthResponse>;
+        }
+      }
+      
       // Store both JWT and refresh token
       setTokens(response.data.jwt, response.data.refreshToken);
       
       // Store user data
       if (response.data.user) {
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Store user role information
+        if (response.data.user.roles && response.data.user.roles.length > 0) {
+          // Check if user has admin role
+          const hasAdminRole = response.data.user.roles.includes('ADMIN');
+          localStorage.setItem('userRole', hasAdminRole ? 'admin' : 'employee');
+        }
       }
     }
     
@@ -323,5 +349,34 @@ export const authApi = {
   refreshToken: async (force: boolean = false): Promise<boolean> => {
     console.log(`Refreshing token with force=${force}`);
     return await refreshAccessToken(force);
+  },
+  
+  createUser: async (userData: { 
+    username: string; 
+    email: string; 
+    password: string; 
+    confirmedPassword: string; 
+    role: string;
+  }): Promise<ApiResponse<any>> => {
+    console.log("Creating new user:", { ...userData, password: "***", confirmedPassword: "***" });
+    
+    try {
+      // Use the API request function to send the request
+      const response = await apiRequest<any>('/users', {
+        method: 'POST',
+        body: JSON.stringify(userData)
+      });
+      
+      console.log("User creation response:", response);
+      return response;
+    } catch (error) {
+      console.error("Error creating user:", error);
+      return {
+        success: false,
+        status: 500,
+        message: error instanceof Error ? error.message : "Failed to create user. Please try again.",
+        data: null
+      };
+    }
   }
 };
