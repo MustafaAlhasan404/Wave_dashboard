@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Menu, Moon, Sun } from "lucide-react";
+import { Menu, Moon, Sun } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { toast } from "sonner";
@@ -90,18 +90,6 @@ export function Header({ isAdmin }: HeaderProps) {
           )}
           <span className="sr-only">Toggle theme</span>
         </Button>
-
-        {isAdmin && (
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="text-muted-foreground hover:text-foreground relative"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
-            <span className="sr-only">Notifications</span>
-          </Button>
-        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

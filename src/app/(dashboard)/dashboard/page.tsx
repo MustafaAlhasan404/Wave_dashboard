@@ -6,7 +6,6 @@ import { BarChart3, ChartPieIcon, FileText, TrendingUp, Users } from "lucide-rea
 import { ShadcnLineChart2 } from "@/components/charts";
 import { NewsItem, newsApi } from "@/lib/api/news";
 import { formatDistanceToNow, format, subMonths } from "date-fns";
-import { BarChart } from "@/components/charts";
 
 export default function DashboardPage() {
   const [isAdmin, setIsAdmin] = useState(true);
@@ -259,25 +258,6 @@ export default function DashboardPage() {
           color="var(--chart-1)"
           valueLabel="Articles"
         />
-      </div>
-      
-      {/* Category distribution chart */}
-      <div className="grid gap-6 md:grid-cols-1">
-        <Card className="bg-card hover:shadow-sm transition-shadow">
-          <CardHeader>
-            <CardTitle>News Categories Distribution</CardTitle>
-            <CardDescription>Breakdown of news articles by category</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BarChart
-              data={categoryStats}
-              bars={[{ dataKey: "count", name: "Articles" }]}
-              xAxisDataKey="name"
-              height={300}
-              barSize={30}
-            />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
