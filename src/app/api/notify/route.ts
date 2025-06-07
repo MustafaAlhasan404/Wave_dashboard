@@ -39,7 +39,12 @@ export async function POST(request: NextRequest) {
     }
     
     // Create a clean payload with only the required fields
-    const payload = {
+    const payload: {
+      title: any;
+      body: any;
+      topic: any;
+      scheduledTime?: any;
+    } = {
       title: body.title,
       body: body.body,
       topic: body.topic || "news", // Default to "news" if not specified

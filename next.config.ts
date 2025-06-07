@@ -9,6 +9,21 @@ const nextConfig: NextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+  images: {
+    domains: [
+      'picsum.photos',
+      'loremflickr.com',
+      'images.unsplash.com',
+      'via.placeholder.com',
+      'randomuser.me',
+      'avatars.githubusercontent.com',
+      '3819-185-107-56-150.ngrok-free.app',
+      'drive.google.com',
+      'lh3.googleusercontent.com',
+      'storage.googleapis.com',
+      'googleusercontent.com'
+    ]
+  },
 };
 
 export default nextConfig;

@@ -17,7 +17,12 @@ export async function POST(request: NextRequest) {
     }
     
     // Create a clean payload with only the required fields
-    const payload = {
+    const payload: {
+      title: any;
+      body: any;
+      topic: any;
+      scheduledTime?: any;
+    } = {
       title: body.title || "Test Notification",
       body: body.body || "This is a test notification",
       topic: body.topic || "news",

@@ -113,6 +113,10 @@
 }
 
 @layer base {
+  html, body {
+    @apply overflow-hidden h-screen;
+  }
+  
   body {
     @apply bg-background text-foreground;
   }

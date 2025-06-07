@@ -1,55 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Generate a mock news item for a given ID
-function generateMockNewsItem(id: string) {
-  const categories = ["Politics", "Business", "Technology", "Health", "Entertainment", "Sports", "Science"];
-  const statuses = ["published", "draft", "archived"];
-  const sources = [
-    {
-      id: "c4d7f976-6cf4-4e20-9898-c086989d43cd",
-      name: "Kutch - Labadie News",
-      image: "https://picsum.photos/seed/pQyN1pq/2314/2437",
-      link: "https://squeaky-alb.info/",
-      _count: { sourceFollowings: 4 }
-    },
-    {
-      id: "56857500-39bd-42ac-82df-aea81bbb91a9",
-      name: "Block, Wyman and Mante News",
-      image: "https://picsum.photos/seed/zsGf3hS7W/2610/2491",
-      link: "https://taut-trash.org",
-      _count: { sourceFollowings: 3 }
-    }
-  ];
-
-  // Use the ID to generate deterministic values
-  const idSum = id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  
-  const randomCategory = categories[idSum % categories.length];
-  const randomStatus = statuses[idSum % statuses.length];
-  const randomSource = sources[idSum % sources.length];
-  const randomDate = new Date(Date.now() - (idSum * 1000000));
-  const credibilityScore = (idSum % 100) / 100;
-  const fakeVoice = idSum % 5 === 0;
-  const isSaved = idSum % 10 === 0;
-
-  return {
-    id,
-    image: idSum % 3 === 0 ? `https://picsum.photos/seed/${id}/800/600` : null,
-    title: `News article: ${randomCategory} update ${id.substring(0, 8)}`,
-    category: randomCategory,
-    fakeVoice,
-    credibilityScore,
-    publishedAt: randomDate.toISOString(),
-    status: randomStatus,
-    source: randomSource,
-    isSaved,
-    content: `This is the full content of the news article with ID ${id}. It contains detailed information about the ${randomCategory} topic discussed in the headline.
-
-The article was published on ${randomDate.toLocaleDateString()} and has a credibility score of ${Math.round(credibilityScore * 100)}%.
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl. Sed euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, eget aliquam nisl nisl sit amet nisl.`
-  };
-}
+const API_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://3819-185-107-56-150.ngrok-free.app';
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '33340aae84db6ddded853028e017a58cef095797213f8b1b1eacaa0b39c45fe8';
 
 export async function GET(
   request: NextRequest,
@@ -57,16 +9,168 @@ export async function GET(
 ) {
   const id = params.id;
   
-  // Simulate a delay to mimic API latency
-  await new Promise(resolve => setTimeout(resolve, 300));
+  // Get auth token from cookies
+  const authToken = request.cookies.get('authToken')?.value;
   
-  // Generate a mock news item for the given ID
-  const newsItem = generateMockNewsItem(id);
+  console.log(`Fetching news item with ID: ${id}`);
   
-  return NextResponse.json({
-    success: true,
-    status: 200,
-    message: "News Item Returned",
-    data: { news: newsItem }
-  });
+  try {
+    // Make request to the actual API
+    const response = await fetch(`${API_URL}/news/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY
+      }
+    });
+    
+    if (!response.ok) {
+      console.log(`API returned error status: ${response.status}`);
+      throw new Error(`API returned status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return NextResponse.json(data);
+    
+  } catch (error) {
+    console.error("Fetch error:", error);
+    
+    return NextResponse.json({
+      success: false,
+      status: 404,
+      message: "News item not found",
+      data: null
+    }, { status: 404 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const id = params.id;
+  
+  // Get auth token from cookies
+  const authToken = request.cookies.get('authToken')?.value;
+  
+  console.log(`Deleting news item with ID: ${id}`);
+  console.log(`Authorization token: ${authToken ? 'Present' : 'Missing'}`);
+  
+  try {
+    // Make request to the actual API
+    const apiUrl = `${API_URL}/news/${id}`;
+    console.log(`Making DELETE request to: ${apiUrl}`);
+    
+    const response = await fetch(apiUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': authToken ? `Bearer ${authToken}` : '',
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY
+      }
+    });
+    
+    // Log response status for debugging
+    console.log(`API response status: ${response.status}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log(`API error response: ${errorText}`);
+      
+      return NextResponse.json({
+        success: false,
+        status: response.status,
+        message: `Failed to delete news item: ${response.statusText}`,
+        data: null
+      }, { status: response.status });
+    }
+    
+    // Try to parse as JSON, but handle text responses too
+    let data;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      // Create a proper response structure if the API returned plain text
+      data = {
+        success: true,
+        message: text || 'News item deleted successfully',
+        data: {
+          deletedNews: [{
+            id: id
+          }]
+        }
+      };
+    }
+    
+    console.log('Delete successful, returning data:', data);
+    return NextResponse.json(data);
+    
+  } catch (error) {
+    console.error("Delete error:", error);
+    
+    return NextResponse.json({
+      success: false,
+      status: 500,
+      message: error instanceof Error ? `Failed to delete news item: ${error.message}` : "Failed to delete news item",
+      data: null
+    }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const id = params.id;
+  const authToken = request.cookies.get('authToken')?.value;
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return NextResponse.json({
+      success: false,
+      status: 400,
+      message: 'Invalid JSON body',
+      data: null
+    }, { status: 400 });
+  }
+
+  console.log(`Updating news with ID: ${id}`, body);
+
+  try {
+    const response = await fetch(`${API_URL}/news/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': authToken ? `Bearer ${authToken}` : '',
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API error response (${response.status}):`, errorText);
+      return NextResponse.json({
+        success: false,
+        status: response.status,
+        message: `Failed to update news: ${response.statusText}`,
+        data: null
+      }, { status: response.status });
+    }
+
+    const data = await response.json();
+    console.log('Update successful, returning data:', data);
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error updating news:', error);
+    return NextResponse.json({
+      success: false,
+      status: 500,
+      message: 'Failed to update news',
+      data: null
+    }, { status: 500 });
+  }
 } 

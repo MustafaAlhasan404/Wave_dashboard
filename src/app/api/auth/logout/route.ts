@@ -9,8 +9,8 @@ export async function GET(request: NextRequest) {
   response.cookies.delete('refreshToken');
   
   // Also clear with specific paths
-  response.cookies.delete('authToken', { path: '/dashboard' });
-  response.cookies.delete('refreshToken', { path: '/dashboard' });
+  response.cookies.delete({ name: 'authToken', path: '/dashboard' });
+  response.cookies.delete({ name: 'refreshToken', path: '/dashboard' });
   
   return response;
 }

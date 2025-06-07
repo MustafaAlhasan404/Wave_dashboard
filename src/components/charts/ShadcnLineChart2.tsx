@@ -6,7 +6,8 @@ import {
   Line, 
   XAxis, 
   CartesianGrid,
-  ResponsiveContainer
+  ResponsiveContainer,
+  YAxis
 } from 'recharts';
 
 import {
@@ -129,6 +130,13 @@ export function ShadcnLineChart2({
                 stroke="var(--grid-line-color)"
                 strokeWidth={1}
                 strokeDasharray="3 3" 
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                stroke="var(--foreground)"
+                domain={['dataMin - 1', 'dataMax + 1']}
+                tickMargin={8}
               />
               <XAxis
                 dataKey={xAxisKey}

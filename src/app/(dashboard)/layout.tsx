@@ -62,11 +62,13 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <div className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-border">
-        <Sidebar isAdmin={isAdmin} />
+    <div className="flex h-screen overflow-hidden bg-background max-h-screen">
+      <div className="hidden md:block md:w-60 md:flex-none md:fixed md:inset-y-0 z-30 md:border-r md:border-border">
+        <div className="h-full overflow-hidden">
+          <Sidebar isAdmin={isAdmin} />
+        </div>
       </div>
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-col flex-1 md:pl-60">
         <Header isAdmin={isAdmin} />
         <main className="flex-1 overflow-y-auto p-6 bg-background">
           {children}
