@@ -34,9 +34,6 @@ export default function NewsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [posts, setPosts] = useState<NewsItem[]>([]);
   
-  // View mode state
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
   const router = useRouter();
   
   // Function to ensure image URL is properly formatted
@@ -171,8 +168,6 @@ export default function NewsPage() {
     }
   };
 
-
-
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
@@ -282,22 +277,6 @@ export default function NewsPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">News Management</h1>
         <div className="flex items-center gap-2">
-          <Button
-            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-            size="icon"
-            aria-label="Grid view"
-            onClick={() => setViewMode('grid')}
-          >
-            <LayoutGrid className="h-5 w-5" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-            size="icon"
-            aria-label="List view"
-            onClick={() => setViewMode('list')}
-          >
-            <ListIcon className="h-5 w-5" />
-          </Button>
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -587,51 +566,27 @@ export default function NewsPage() {
           </div>
         ) : (
           <>
-            {viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-                {filteredPosts.map((post) => (
-                  <NewsPostCard 
-                    key={post.id} 
-                    post={post} 
-                    onViewDetails={() => handleViewDetails(post.id)}
-                  />
-                ))}
-                {filteredPosts.length === 0 && (
-                  <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                    <p className="text-muted-foreground">No news posts found matching your filters.</p>
-                    <Button variant="outline" className="mt-4" onClick={() => {
-                      setSearchQuery("");
-                      setCategoryFilter("all");
-                      setStatusFilter("all");
-                    }}>
-                      Clear Filters
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4 mt-4">
-                {filteredPosts.map((post) => (
-                  <NewsPostCard 
-                    key={post.id} 
-                    post={post}
-                    onViewDetails={() => handleViewDetails(post.id)}
-                  />
-                ))}
-                {filteredPosts.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <p className="text-muted-foreground">No news posts found matching your filters.</p>
-                    <Button variant="outline" className="mt-4" onClick={() => {
-                      setSearchQuery("");
-                      setCategoryFilter("all");
-                      setStatusFilter("all");
-                    }}>
-                      Clear Filters
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+              {filteredPosts.map((post) => (
+                <NewsPostCard 
+                  key={post.id} 
+                  post={post} 
+                  onViewDetails={() => handleViewDetails(post.id)}
+                />
+              ))}
+              {filteredPosts.length === 0 && (
+                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+                  <p className="text-muted-foreground">No news posts found matching your filters.</p>
+                  <Button variant="outline" className="mt-4" onClick={() => {
+                    setSearchQuery("");
+                    setCategoryFilter("all");
+                    setStatusFilter("all");
+                  }}>
+                    Clear Filters
+                  </Button>
+                </div>
+              )}
+            </div>
             
             {/* Pagination */}
             {totalPages > 1 && (

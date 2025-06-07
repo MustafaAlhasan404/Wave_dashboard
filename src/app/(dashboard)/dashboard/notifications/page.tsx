@@ -6,50 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AlertCircle, Bell, Calendar, Send, Users } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { notificationsApi, NotificationPayload } from "@/lib/api/notifications";
-import { TokenDebug } from "@/components/dashboard/token-debug";
-
-// Mock data for sent notifications
-const mockNotifications = [
-  {
-    id: "1",
-    title: "New Feature Announcement",
-    message: "We've just launched our new AI-powered content suggestions feature!",
-    target: "all",
-    sentAt: "2023-06-01T10:30:00Z",
-    sentBy: "Admin User",
-  },
-  {
-    id: "2",
-    title: "Scheduled Maintenance",
-    message: "Our platform will be undergoing maintenance on June 15th from 2-4 AM EST.",
-    target: "active",
-    sentAt: "2023-05-28T14:15:00Z",
-    sentBy: "Admin User",
-  },
-  {
-    id: "3",
-    title: "Content Guidelines Update",
-    message: "We've updated our content guidelines. Please review the new rules.",
-    target: "content_creators",
-    sentAt: "2023-05-20T09:45:00Z",
-    sentBy: "Admin User",
-  },
-];
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export default function NotificationsPage() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("compose");
   
   const [formData, setFormData] = useState({
     title: "",
@@ -164,166 +134,161 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Notifications</h1>
-        <Badge variant="outline" className="flex items-center gap-1">
-          <Bell className="h-3.5 w-3.5" />
-          <span>{mockNotifications.length} Sent</span>
-        </Badge>
-      </div>
+    <div className="flex flex-col gap-8 relative">
+      {/* Header Card */}
+      <Card className="bg-muted/40 border-none shadow-none p-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-8 py-6">
+          <div>
+            <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
+              <Bell className="h-7 w-7 text-primary" />
+              Notifications
+            </h1>
+            <p className="text-muted-foreground text-base">Send announcements to your users.</p>
+          </div>
+        </div>
+      </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="compose">Compose</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="debug">Debug</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="compose" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>New Notification</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSendNotification} className="space-y-5">
-                <div className="grid gap-5">
-                  <div className="space-y-2.5">
-                    <Label htmlFor="title">Title</Label>
-                    <Input
-                      id="title"
-                      name="title"
-                      placeholder="Enter a concise, attention-grabbing title"
-                      value={formData.title}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2.5">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      placeholder="Enter your notification message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                      className="resize-none h-24"
-                    />
-                  </div>
-                  
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <div className="space-y-2.5">
-                      <Label htmlFor="target" className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Target Audience
-                      </Label>
-                      <Select
-                        value={formData.target}
-                        onValueChange={(value) => handleSelectChange("target", value)}
-                      >
-                        <SelectTrigger id="target">
-                          <SelectValue placeholder="Select audience" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="news">All Users (News)</SelectItem>
-                          <SelectItem value="premium">Premium Users</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2.5">
-                      <Label className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Schedule
-                      </Label>
-                      <div className="flex items-center gap-3 h-10">
-                        <Switch
-                          id="schedule"
-                          checked={formData.scheduleLater}
-                          onCheckedChange={handleScheduleChange}
-                        />
-                        <Label htmlFor="schedule" className="font-normal">
-                          {formData.scheduleLater ? "Scheduled" : "Send immediately"}
-                        </Label>
-                      </div>
-                      
-                      {formData.scheduleLater && (
-                        <Input
-                          id="scheduleDate"
-                          name="scheduleDate"
-                          type="datetime-local"
-                          value={formData.scheduleDate}
-                          onChange={handleChange}
-                          required={formData.scheduleLater}
-                          className="mt-2"
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                {formData.title && formData.message && (
-                  <Alert className="mt-4 bg-card border border-border">
-                    <Bell className="h-4 w-4" />
-                    <AlertTitle>{formData.title}</AlertTitle>
-                    <AlertDescription>
-                      {formData.message}
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                <div className="flex items-center justify-between pt-2">
-                  <div className="text-xs text-muted-foreground">
-                    <AlertCircle className="h-3 w-3 inline mr-1" />
-                    Notifications cannot be recalled once sent
-                  </div>
-                  <Button type="submit" disabled={isSending}>
-                    <Send className="mr-2 h-4 w-4" />
-                    {isSending ? "Sending..." : "Send Notification"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="history" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>Notification History</CardTitle>
-            </CardHeader>
-            <CardContent>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        {/* Form */}
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="px-6 pb-2 pt-6">
+            <CardTitle>New Notification</CardTitle>
+            <CardDescription>Fill out the form to send a notification.</CardDescription>
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
+            <form onSubmit={handleSendNotification} className="space-y-6">
               <div className="space-y-4">
-                {mockNotifications.map((notification) => (
-                  <Card key={notification.id} className="overflow-hidden bg-muted/30 border-none">
-                    <CardContent className="p-4">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium">{notification.title}</h3>
-                          <Badge variant="outline" className="text-xs">
-                            {getTargetLabel(notification.target)}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{notification.message}</p>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                          <span>{formatDate(notification.sentAt)}</span>
-                          <span>by {notification.sentBy}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="text-base font-medium">Title</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    placeholder="Enter a concise, attention-grabbing title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
+                    className="h-11 text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="message" className="text-base font-medium">Message</Label>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    placeholder="Enter your notification message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    className="resize-none h-28 text-base"
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="target" className="flex items-center gap-2 text-base font-medium">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      Target Audience
+                    </Label>
+                    <Select
+                      value={formData.target}
+                      onValueChange={(value) => handleSelectChange("target", value)}
+                    >
+                      <SelectTrigger id="target" className="h-11 text-base">
+                        <SelectValue placeholder="Select audience" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="news">All Users (News)</SelectItem>
+                        <SelectItem value="premium">Premium Users</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-base font-medium">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      Schedule
+                    </Label>
+                    <div className="flex items-center gap-3 h-11">
+                      <Switch
+                        id="schedule"
+                        checked={formData.scheduleLater}
+                        onCheckedChange={handleScheduleChange}
+                      />
+                      <Label htmlFor="schedule" className="font-normal">
+                        {formData.scheduleLater ? "Scheduled" : "Send immediately"}
+                      </Label>
+                    </div>
+                    {formData.scheduleLater && (
+                      <Input
+                        id="scheduleDate"
+                        name="scheduleDate"
+                        type="datetime-local"
+                        value={formData.scheduleDate}
+                        onChange={handleChange}
+                        required={formData.scheduleLater}
+                        className="mt-2 h-11 text-base"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <div className="text-xs text-muted-foreground">
+                  <AlertCircle className="h-3 w-3 inline mr-1" />
+                  Notifications cannot be recalled once sent
+                </div>
+                <Button 
+                  type="submit" 
+                  disabled={isSending}
+                  className="gap-1.5 px-6 py-2 rounded-lg text-base font-medium shadow bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {isSending ? (
+                    <>
+                      <LoadingDots size={4} color="currentColor" className="mr-1" />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-5 w-5 mr-2" />
+                      <span>Send Notification</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+        {/* Live Preview */}
+        <div className="sticky top-24">
+          <Card className="border-primary/30 shadow-md animate-in fade-in zoom-in-95 duration-300">
+            <CardHeader className="px-6 pt-6 pb-2">
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-primary" />
+                Preview
+              </CardTitle>
+              <CardDescription>How your notification will appear</CardDescription>
+            </CardHeader>
+            <CardContent className="px-6 pb-6">
+              <Alert className="bg-muted/20 border border-border/40">
+                <Bell className="h-4 w-4" />
+                <AlertTitle>{formData.title || "Notification Title"}</AlertTitle>
+                <AlertDescription>
+                  {formData.message || "Your notification message will appear here."}
+                </AlertDescription>
+              </Alert>
+              <div className="flex items-center gap-3 mt-4">
+                <Badge variant="outline" className="text-xs bg-muted/30">
+                  {getTargetLabel(formData.target)}
+                </Badge>
+                {formData.scheduleLater && formData.scheduleDate && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {formatDate(formData.scheduleDate)}
+                  </span>
+                )}
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-        
-        <TabsContent value="debug" className="mt-4">
-          <TokenDebug />
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 } 

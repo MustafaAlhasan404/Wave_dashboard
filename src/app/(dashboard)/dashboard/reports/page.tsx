@@ -11,13 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Check, Flag, RefreshCcw, Search, X, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Flag, RefreshCcw, Search, X, Loader2, MoreHorizontal, Trash2, LayoutGrid, List as ListIcon, Users2, AlertCircle, Newspaper, Tag, User, Calendar } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Report, reportsApi } from "@/lib/api/reports";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReportCard } from "@/components/reports/report-card";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 // Create a client component that uses useSearchParams
 function ReportsPageContent() {
@@ -111,20 +114,17 @@ function ReportsPageContent() {
     router.push(url, { scroll: false });
   }, [searchQuery, statusFilter, router]);
 
-  const handleViewReport = (reportId: string) => {
-    // Create URL with current filters preserved
-    const params = new URLSearchParams();
-    if (searchQuery) {
-      params.set("search", searchQuery);
+  const handleViewDetails = (reportId: string) => {
+    const report = reports.find(r => r.id === reportId);
+    if (report) {
+      setSelectedReport(report);
+      // Scroll to top to show the selected report
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    if (statusFilter !== "all") {
-      params.set("status", statusFilter);
-    }
-    
-    // Navigate to the report detail page with filters in the URL
-    const queryString = params.toString();
-    const url = `/dashboard/reports/${reportId}${queryString ? `?${queryString}` : ''}`;
-    router.push(url);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedReport(null);
   };
 
   const getStatusBadge = (status: string) => {
@@ -185,6 +185,11 @@ function ReportsPageContent() {
         );
         
       setReports(updatedReports);
+
+      // Update selected report if it's the one being updated
+      if (selectedReport && selectedReport.id === reportId) {
+        setSelectedReport({ ...selectedReport, status: newStatus });
+      }
       } else {
         toast.error("Failed to update report status");
       }
@@ -206,11 +211,13 @@ function ReportsPageContent() {
         
         // Remove the deleted report from the list
         const updatedReports = reports.filter(report => report.id !== reportId);
-      setReports(updatedReports);
-      
-        // Close the dialog
+        setReports(updatedReports);
+        
+        // Close the dialog and clear selection if the deleted report was selected
         setIsDeleteDialogOpen(false);
-        setSelectedReport(null);
+        if (selectedReport && selectedReport.id === reportId) {
+          setSelectedReport(null);
+        }
       } else {
         toast.error("Failed to delete report");
       }
@@ -239,61 +246,240 @@ function ReportsPageContent() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Content Reports ({reports.length})</h1>
+    <div className="flex flex-col gap-6 relative">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Content Reports</h1>
         <div className="flex items-center gap-2">
-          <Select
-            value={statusFilter}
-            onValueChange={setStatusFilter}
-          >
-            <SelectTrigger className="w-[150px] h-9">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="PENDING">Pending</SelectItem>
-              <SelectItem value="IN_REVIEW">In Review</SelectItem>
-              <SelectItem value="RESOLVED">Resolved</SelectItem>
-              <SelectItem value="DISMISSED">Dismissed</SelectItem>
-              <SelectItem value="ACTION_TAKEN">Action Taken</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="relative w-[200px]">
-            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search reports..."
-              className="pl-8 h-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            onClick={handleClearFilters}
-            disabled={!searchQuery && statusFilter === "all"}
-            title="Clear filters"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
+          <button
             onClick={handleRefresh}
-            disabled={isRefreshing || isLoading}
-            title="Refresh reports"
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none"
           >
-            {isRefreshing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCcw className="h-4 w-4" />
-            )}
-          </Button>
+            <RefreshCcw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Refreshing..." : "Refresh Reports"}
+          </button>
         </div>
       </div>
+
+      {/* Floating Report Details */}
+      {selectedReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <Card className="w-full max-w-5xl border-border shadow-lg animate-in fade-in zoom-in-95 duration-300">
+            <div className="grid grid-cols-1 lg:grid-cols-5 lg:min-h-[600px]">
+              {/* Left column with report id and message */}
+              <div className="lg:col-span-2 relative bg-muted">
+                <div className="bg-muted h-full min-h-[300px] flex flex-col p-6 relative">
+                  <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                    {getStatusBadge(selectedReport.status)}
+                  </div>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={handleCloseDetails}
+                    className="absolute top-4 left-4 z-10 rounded-full h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="sr-only">Close</span>
+                  </Button>
+                  
+                  <div className="flex-1 flex flex-col items-start justify-center">
+                    <div className="mb-3 mt-8">
+                      <Badge variant="outline" className="text-sm font-medium">
+                        Report #{selectedReport.id.substring(0, 8)}
+                      </Badge>
+                    </div>
+                    <h2 className="text-xl font-semibold mb-2">
+                      {reportsApi.getReportTypeLabel(selectedReport.type)}
+                    </h2>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>{formatDate(selectedReport.createdAt)}</span>
+                    </div>
+                    <div className="bg-background/50 p-4 rounded-lg border border-border/60 w-full">
+                      <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                        Report Message
+                      </h3>
+                      <p className="text-sm whitespace-pre-wrap">{selectedReport.message}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Right column with details */}
+              <div className="lg:col-span-3 flex flex-col p-0">
+                <div className="flex-1 p-5 pb-3 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-4 mb-5">
+                    <div className="bg-muted/30 p-3 rounded-lg border border-border/40 hover:shadow-sm transition-shadow">
+                      <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5" />
+                        Reporter
+                      </p>
+                      <p className="text-sm font-medium">User #{selectedReport.userId.substring(0, 8)}</p>
+                    </div>
+                    <div className="bg-muted/30 p-3 rounded-lg border border-border/40 hover:shadow-sm transition-shadow">
+                      <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                        <Flag className="h-3.5 w-3.5" />
+                        Type
+                      </p>
+                      <p className="text-sm font-medium">{reportsApi.getReportTypeLabel(selectedReport.type)}</p>
+                    </div>
+                    <div className="bg-muted/30 p-3 rounded-lg border border-border/40 hover:shadow-sm transition-shadow">
+                      <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        Status
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(selectedReport.status)}
+                      </div>
+                    </div>
+                    <div className="bg-muted/30 p-3 rounded-lg border border-border/40 hover:shadow-sm transition-shadow">
+                      <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
+                        Date Reported
+                      </p>
+                      <p className="text-sm font-medium">{formatDate(selectedReport.createdAt)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent my-5"></div>
+                  
+                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Newspaper className="h-4 w-4 text-primary" />
+                    <span>Reported Content</span>
+                  </h3>
+                  <div className="bg-muted/30 p-4 rounded-lg border border-border/40">
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge variant="outline" className="text-xs">News Item</Badge>
+                      <p className="text-xs text-muted-foreground">ID: {selectedReport.newsId}</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => router.push(`/dashboard/news/${selectedReport.newsId}`)}
+                      className="mt-2 w-full justify-center gap-1.5"
+                    >
+                      <span>View Reported Content</span>
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-b from-transparent via-muted/5 to-muted/10 p-4 rounded-br-lg flex justify-between items-center gap-4">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="h-8 gap-1.5"
+                        disabled={updatingReportId === selectedReport.id}
+                      >
+                        {updatingReportId === selectedReport.id ? (
+                          <>
+                            <LoadingDots size={4} color="currentColor" className="mr-1" />
+                            <span>Updating...</span>
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCcw className="h-3.5 w-3.5" />
+                            <span>Update Status</span>
+                          </>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-56">
+                      <DropdownMenuItem 
+                        disabled={selectedReport.status === 'PENDING' || updatingReportId === selectedReport.id}
+                        onClick={() => handleStatusUpdate(selectedReport.id, 'PENDING')}
+                        className="flex items-center py-2"
+                      >
+                        <Badge 
+                          variant="outline" 
+                          className="bg-yellow-100 text-yellow-800 mr-2 px-2 py-1"
+                          style={{ borderColor: "#d97706" }}
+                        >
+                          Pending
+                        </Badge>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        disabled={selectedReport.status === 'IN_REVIEW' || updatingReportId === selectedReport.id}
+                        onClick={() => handleStatusUpdate(selectedReport.id, 'IN_REVIEW')}
+                        className="flex items-center py-2"
+                      >
+                        <Badge 
+                          variant="outline" 
+                          className="bg-blue-100 text-blue-800 mr-2 px-2 py-1"
+                          style={{ borderColor: "#2563eb" }}
+                        >
+                          In Review
+                        </Badge>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        disabled={selectedReport.status === 'RESOLVED' || updatingReportId === selectedReport.id}
+                        onClick={() => handleStatusUpdate(selectedReport.id, 'RESOLVED')}
+                        className="flex items-center py-2"
+                      >
+                        <Badge 
+                          variant="outline" 
+                          className="bg-green-100 text-green-800 mr-2 px-2 py-1"
+                          style={{ borderColor: "#16a34a" }}
+                        >
+                          Resolved
+                        </Badge>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        disabled={selectedReport.status === 'DISMISSED' || updatingReportId === selectedReport.id}
+                        onClick={() => handleStatusUpdate(selectedReport.id, 'DISMISSED')}
+                        className="flex items-center py-2"
+                      >
+                        <Badge 
+                          variant="outline" 
+                          className="bg-gray-100 text-gray-800 mr-2 px-2 py-1"
+                          style={{ borderColor: "#6b7280" }}
+                        >
+                          Dismissed
+                        </Badge>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        disabled={selectedReport.status === 'ACTION_TAKEN' || updatingReportId === selectedReport.id}
+                        onClick={() => handleStatusUpdate(selectedReport.id, 'ACTION_TAKEN')}
+                        className="flex items-center py-2"
+                      >
+                        <Badge 
+                          variant="outline" 
+                          className="bg-red-100 text-red-800 mr-2 px-2 py-1"
+                          style={{ borderColor: "#dc2626" }}
+                        >
+                          Action Taken
+                        </Badge>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => openDeleteDialog(selectedReport)}
+                    disabled={deletingReportId === selectedReport.id}
+                    className="h-8 gap-1.5"
+                  >
+                    {deletingReportId === selectedReport.id ? (
+                      <>
+                        <LoadingDots size={4} color="currentColor" className="mr-1" />
+                        <span>Deleting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Delete</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Delete confirmation dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -325,7 +511,7 @@ function ReportsPageContent() {
             >
               {deletingReportId ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoadingDots size={4} color="currentColor" className="mr-2" />
                   Deleting...
                 </>
               ) : (
@@ -336,199 +522,75 @@ function ReportsPageContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Reports list */}
-      <div className="space-y-4">
-        {isLoading ? (
-          // Loading skeleton
-          Array(5)
-            .fill(0)
-            .map((_, i) => (
-              <Card key={i} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-5 w-24" />
-                      <Skeleton className="h-4 w-16" />
-                    </div>
-                    <Skeleton className="h-5 w-20" />
-                  </div>
-                  
-                  <Skeleton className="h-4 w-full mb-1" />
-                  <Skeleton className="h-4 w-2/3 mb-3" />
-                  
-                  <div className="flex items-center justify-between">
-                    <Skeleton className="h-4 w-24" />
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-8 w-24" />
-                      <Skeleton className="h-8 w-8" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-        ) : filteredReports.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-6 text-center">
-              <Search className="h-5 w-5 text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">
-                {searchQuery || statusFilter !== "all"
-                  ? "No matching reports found"
-                  : "No reports to display"}
-              </p>
-              {(searchQuery || statusFilter !== "all") && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mt-2"
-                  onClick={handleClearFilters}
-                >
-                  Clear filters
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          filteredReports.map((report) => (
-            <Card 
-              key={report.id} 
-              className="overflow-hidden hover:bg-muted/5"
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Input
+            placeholder="Search reports..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="sm:max-w-xs"
+          />
+          <div className="flex flex-row gap-4">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="IN_REVIEW">In Review</SelectItem>
+                <SelectItem value="RESOLVED">Resolved</SelectItem>
+                <SelectItem value="DISMISSED">Dismissed</SelectItem>
+                <SelectItem value="ACTION_TAKEN">Action Taken</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearFilters}
+              disabled={!searchQuery && statusFilter === "all"}
+              className="h-10"
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium">#{report.id.substring(0, 8)}</h3>
-                    <span className="text-xs text-muted-foreground">
-                      {reportsApi.getReportTypeLabel(report.type)}
-                    </span>
-                  </div>
-                  {getStatusBadge(report.status)}
-                </div>
-                
-                <p className="text-sm mb-3 line-clamp-2">{report.message}</p>
-                
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{formatDate(report.createdAt)}</span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8"
-                      onClick={() => handleViewReport(report.id)}
-                    >
-                      View Details
-                    </Button>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          {updatingReportId === report.id || deletingReportId === report.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <MoreHorizontal className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            <span className="flex items-center">
-                              {updatingReportId === report.id ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <RefreshCcw className="h-4 w-4 mr-2" />
-                              )}
-                              Update Status
-                            </span>
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuPortal>
-                            <DropdownMenuSubContent className="w-56">
-                              <DropdownMenuItem 
-                                disabled={report.status === 'PENDING' || updatingReportId === report.id}
-                                onClick={() => handleStatusUpdate(report.id, 'PENDING')}
-                                className="flex items-center py-2"
-                              >
-                                <Badge 
-                                  variant="outline" 
-                                  className="bg-yellow-100 text-yellow-800 mr-2 px-2 py-1"
-                                  style={{ borderColor: "#d97706" }}
-                                >
-                                  Pending
-                                </Badge>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                disabled={report.status === 'IN_REVIEW' || updatingReportId === report.id}
-                                onClick={() => handleStatusUpdate(report.id, 'IN_REVIEW')}
-                                className="flex items-center py-2"
-                              >
-                                <Badge 
-                                  variant="outline" 
-                                  className="bg-blue-100 text-blue-800 mr-2 px-2 py-1"
-                                  style={{ borderColor: "#2563eb" }}
-                                >
-                                  In Review
-                                </Badge>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                disabled={report.status === 'RESOLVED' || updatingReportId === report.id}
-                                onClick={() => handleStatusUpdate(report.id, 'RESOLVED')}
-                                className="flex items-center py-2"
-                              >
-                                <Badge 
-                                  variant="outline" 
-                                  className="bg-green-100 text-green-800 mr-2 px-2 py-1"
-                                  style={{ borderColor: "#16a34a" }}
-                                >
-                                  Resolved
-                                </Badge>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                disabled={report.status === 'DISMISSED' || updatingReportId === report.id}
-                                onClick={() => handleStatusUpdate(report.id, 'DISMISSED')}
-                                className="flex items-center py-2"
-                              >
-                                <Badge 
-                                  variant="outline" 
-                                  className="bg-gray-100 text-gray-800 mr-2 px-2 py-1"
-                                  style={{ borderColor: "#6b7280" }}
-                                >
-                                  Dismissed
-                                </Badge>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                disabled={report.status === 'ACTION_TAKEN' || updatingReportId === report.id}
-                                onClick={() => handleStatusUpdate(report.id, 'ACTION_TAKEN')}
-                                className="flex items-center py-2"
-                              >
-                                <Badge 
-                                  variant="outline" 
-                                  className="bg-red-100 text-red-800 mr-2 px-2 py-1"
-                                  style={{ borderColor: "#dc2626" }}
-                                >
-                                  Action Taken
-                                </Badge>
-                              </DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                          </DropdownMenuPortal>
-                        </DropdownMenuSub>
-                        
-                        <DropdownMenuItem 
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => openDeleteDialog(report)}
-                          disabled={deletingReportId !== null}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Report
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+              <X className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <LoadingDots size={10} color="#888" />
+          </div>
+        ) : filteredReports.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Search className="h-10 w-10 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">
+              {searchQuery || statusFilter !== "all"
+                ? "No matching reports found"
+                : "No reports to display"}
+            </p>
+            {(searchQuery || statusFilter !== "all") && (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={handleClearFilters}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+            {filteredReports.map((report) => (
+              <ReportCard
+                key={report.id}
+                report={report}
+                onViewDetails={() => handleViewDetails(report.id)}
+                onStatusUpdate={handleStatusUpdate}
+                onDelete={handleDeleteReport}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>
@@ -539,21 +601,25 @@ function ReportsPageContent() {
 export default function ReportsPage() {
   return (
     <Suspense fallback={
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="h-6 w-48 bg-muted rounded animate-pulse"></div>
+      <div className="flex flex-col gap-6">
+        <div className="flex justify-between items-center">
+          <div className="h-8 w-48 bg-muted rounded animate-pulse"></div>
           <div className="flex items-center gap-2">
-            <div className="h-9 w-[150px] bg-muted rounded animate-pulse"></div>
-            <div className="h-9 w-[200px] bg-muted rounded animate-pulse"></div>
-            <div className="h-9 w-9 bg-muted rounded animate-pulse"></div>
-            <div className="h-9 w-9 bg-muted rounded animate-pulse"></div>
+            <div className="h-9 w-32 bg-muted rounded animate-pulse"></div>
           </div>
         </div>
-        <div className="space-y-4">
-          {Array(5)
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="h-10 w-full sm:w-80 bg-muted rounded animate-pulse"></div>
+          <div className="flex gap-4">
+            <div className="h-10 w-[180px] bg-muted rounded animate-pulse"></div>
+            <div className="h-10 w-20 bg-muted rounded animate-pulse"></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+          {Array(6)
             .fill(0)
             .map((_, i) => (
-              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+              <div key={i} className="h-64 bg-muted rounded animate-pulse"></div>
             ))}
         </div>
       </div>
