@@ -191,7 +191,7 @@ export function NewsForm({
     }
     
     // Handle relative paths from the API
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://3819-185-107-56-150.ngrok-free.app';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 

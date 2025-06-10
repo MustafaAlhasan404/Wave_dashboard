@@ -17,7 +17,6 @@ const nextConfig: NextConfig = {
       'via.placeholder.com',
       'randomuser.me',
       'avatars.githubusercontent.com',
-      '3819-185-107-56-150.ngrok-free.app',
       'drive.google.com',
       'lh3.googleusercontent.com',
       'storage.googleapis.com',
