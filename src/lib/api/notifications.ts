@@ -64,5 +64,26 @@ export const notificationsApi = {
       { id: "news", name: "News", description: "General news notifications sent to all users" },
       { id: "premium", name: "Premium", description: "Notifications for premium users only" }
     ];
+  },
+
+  /**
+   * Get notification history
+   * @returns API response with list of notifications
+   */
+  getNotificationHistory: async () => {
+    try {
+      return await apiRequest<{ id: string; topic: string; title: string; body: string; data: any; createdAt: string; }[]>(
+        '/notifications',
+        { method: 'GET' }
+      );
+    } catch (error) {
+      console.error('Error fetching notification history:', error);
+      return {
+        success: false,
+        status: 500,
+        message: 'Failed to fetch notification history',
+        data: null as any
+      };
+    }
   }
 };

@@ -320,11 +320,9 @@ export default function NewsPage() {
                     </div>
                     
                     <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-                      <Badge variant={
-                        selectedPost.status === "published" ? "default" : 
-                        selectedPost.status === "draft" ? "outline" : "secondary"
-                      }
-                      className="text-xs font-medium shadow-sm px-2.5 py-0.5 bg-white/90 text-foreground"
+                      <Badge 
+                        variant="default"
+                        className="text-xs font-medium shadow-sm px-2.5 py-0.5"
                       >
                         {selectedPost.status}
                       </Badge>
@@ -351,11 +349,9 @@ export default function NewsPage() {
                     <ImageIcon className="h-20 w-20 text-muted-foreground/30" />
                     
                     <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-                      <Badge variant={
-                        selectedPost.status === "published" ? "default" : 
-                        selectedPost.status === "draft" ? "outline" : "secondary"
-                      }
-                      className="text-xs font-medium shadow-sm px-2.5 py-0.5"
+                      <Badge 
+                        variant="default"
+                        className="text-xs font-medium shadow-sm px-2.5 py-0.5"
                       >
                         {selectedPost.status}
                       </Badge>
@@ -402,7 +398,23 @@ export default function NewsPage() {
                         <Users2 className="h-3.5 w-3.5" />
                         Source
                       </p>
-                      <p className="text-sm font-medium">{selectedPost.source.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="relative h-6 w-6 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center">
+                          {selectedPost.source.image ? (
+                            <Image
+                              src={selectedPost.source.image}
+                              alt={selectedPost.source.name}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                              {selectedPost.source.name.charAt(0)}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm font-medium">{selectedPost.source.name}</span>
+                      </div>
                     </div>
                     <div className="bg-muted/30 p-3 rounded-lg border border-border/40 hover:shadow-sm transition-shadow">
                       <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1.5">

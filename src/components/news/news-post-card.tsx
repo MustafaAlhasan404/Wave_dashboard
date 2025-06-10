@@ -205,9 +205,18 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <div className="relative h-6 w-6 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center">
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                  {post.source.name.charAt(0)}
-                </span>
+                {post.source.image ? (
+                  <Image
+                    src={post.source.image}
+                    alt={post.source.name}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                    {post.source.name.charAt(0)}
+                  </span>
+                )}
               </div>
               <span className="text-sm font-medium">{post.source.name}</span>
             </div>
@@ -273,10 +282,7 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
             onClick={onViewDetails} 
             variant="default" 
             size="sm" 
-            className={cn(
-              "transition-all duration-300 gap-1.5",
-              isHovered ? "bg-primary hover:bg-primary/90" : ""
-            )}
+            className="transition-all duration-300 gap-1.5 bg-primary hover:bg-primary/90"
           >
             <span>View Details</span>
             <ExternalLink className="h-3.5 w-3.5" />
