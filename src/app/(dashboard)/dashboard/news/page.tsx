@@ -37,8 +37,8 @@ export default function NewsPage() {
   const router = useRouter();
   
   // Function to ensure image URL is properly formatted
-  const getImageUrl = (url: string | null): string => {
-    if (!url) return ''; // Return empty string instead of null
+  const getImageUrl = (url: string | null): string | null => {
+    if (!url) return null; // Return null instead of empty string
     
     // If it's already an absolute URL, return it as is
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -298,11 +298,12 @@ export default function NewsPage() {
                 {selectedPost.image ? (
                   <div className="relative w-full h-full min-h-[300px] lg:min-h-full">
                     <Image
-                      src={getImageUrl(selectedPost.image)}
+                      src={getImageUrl(selectedPost.image) || '/placeholder-image.svg'}
                       alt={selectedPost.title}
                       fill
                       className="object-cover rounded-l-lg"
                       priority
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
                     

@@ -13,6 +13,7 @@ import {
   Users,
   Flag,
   UserPlus,
+  Key,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,13 @@ export function Sidebar({ isAdmin }: SidebarProps) {
       icon: UserPlus,
       href: "/dashboard/employees/add",
       active: pathname === "/dashboard/employees/add",
+      adminOnly: true,
+    },
+    {
+      label: "API Keys",
+      icon: Key,
+      href: "/dashboard/api-keys",
+      active: pathname === "/dashboard/api-keys",
       adminOnly: true,
     },
     {

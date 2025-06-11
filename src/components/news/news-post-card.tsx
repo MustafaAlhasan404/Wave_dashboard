@@ -45,8 +45,8 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
   }, [post.id, post.image]);
 
   // Function to ensure image URL is properly formatted
-  const getImageUrl = (url: string | null): string => {
-    if (!url) return ''; // Return empty string instead of null
+  const getImageUrl = (url: string | null): string | null => {
+    if (!url) return null; // Return null instead of empty string
     
     // If it's already an absolute URL, return it as is
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -161,7 +161,7 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
           {post.image && !imageError ? (
             <>
               <Image
-                src={getImageUrl(post.image)}
+                src={getImageUrl(post.image) || '/placeholder-image.svg'}
                 alt={post.title}
                 fill
                 className={cn(
