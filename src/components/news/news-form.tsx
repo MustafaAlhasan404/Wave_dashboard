@@ -149,15 +149,25 @@ export function NewsForm({
     }
   };
 
-  const handleResendToAI = () => {
-    // Implementation for AI resend
+  const handleResendToAI = async () => {
+    if (!initialData?.id) return;
+    
     setIsResendingToAI(true);
     
-    // Simulate API call for now
-    setTimeout(() => {
+    try {
+      const response = await newsApi.resendToAI(initialData.id);
+      
+      if (response.success) {
+        toast.success(response.message || "News post sent to AI for processing");
+      } else {
+        toast.error(response.message || "Failed to send news post to AI");
+      }
+    } catch (error) {
+      console.error("Error resending to AI:", error);
+      toast.error("An error occurred while sending the news post to AI");
+    } finally {
       setIsResendingToAI(false);
-      toast.success("News post sent to AI for processing");
-    }, 1500);
+    }
   };
 
   // Function to get image URL with proper base URL

@@ -90,8 +90,6 @@ export const newsApi = {
     return apiRequest<{ news: NewsItem }>(`/news/${id}`);
   },
   
-
-  
   deleteNews: async (id: string) => {
     return apiRequest<DeleteNewsResponse>(`/news/${id}`, {
       method: 'DELETE'
@@ -109,6 +107,12 @@ export const newsApi = {
     return apiRequest<CreateNewsResponse>('/news', {
       method: 'POST',
       body: JSON.stringify(data)
+    });
+  },
+  
+  resendToAI: async (id: string) => {
+    return apiRequest<{success: boolean; message: string}>(`/news/resend/${id}`, {
+      method: 'POST'
     });
   },
   

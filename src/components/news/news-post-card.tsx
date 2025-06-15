@@ -93,17 +93,24 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
     }
   };
 
-  const handleResendToAI = () => {
+  const handleResendToAI = async () => {
     setIsResending(true);
     
-    // Simulate API call to resend post to AI
-    setTimeout(() => {
+    try {
+      const response = await newsApi.resendToAI(post.id);
+      
+      if (response.success) {
+        toast.success(response.message || "News post sent to AI for processing");
+      } else {
+        toast.error(response.message || "Failed to send news post to AI");
+      }
+    } catch (error) {
+      console.error("Error resending to AI:", error);
+      toast.error("An error occurred while sending the news post to AI");
+    } finally {
       setIsResending(false);
-      toast.success("News post sent to AI for processing");
-    }, 1500);
+    }
   };
-
-
 
   const formattedDate = post.publishedAt ? 
     formatDistanceToNow(new Date(post.publishedAt), { addSuffix: true }) : 
@@ -154,8 +161,6 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
               {post.status}
             </Badge>
           </div>
-
-
 
           {/* Image or placeholder */}
           {post.image && !imageError ? (

@@ -124,16 +124,25 @@ export default function NewsPage() {
     setSelectedPost(null);
   };
 
-  const handleResendToAI = () => {
+  const handleResendToAI = async () => {
     if (!selectedPost) return;
     
     setIsResending(true);
     
-    // Simulate API call to resend post to AI
-    setTimeout(() => {
+    try {
+      const response = await newsApi.resendToAI(selectedPost.id);
+      
+      if (response.success) {
+        toast.success(response.message || "News post sent to AI for processing");
+      } else {
+        toast.error(response.message || "Failed to send news post to AI");
+      }
+    } catch (error) {
+      console.error("Error resending to AI:", error);
+      toast.error("An error occurred while sending the news post to AI");
+    } finally {
       setIsResending(false);
-      toast.success("News post sent to AI for processing");
-    }, 1500);
+    }
   };
 
   const handleDelete = async () => {
