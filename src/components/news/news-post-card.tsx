@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Edit, MoreVertical, RefreshCcw, Trash, ImageIcon, ExternalLink, Calendar, Tag } from "lucide-react";
+import { Edit, MoreVertical, RefreshCcw, Trash, ImageIcon, ExternalLink, Calendar, Tag, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import { NewsItem, newsApi } from "@/lib/api/news";
 import { Badge } from "@/components/ui/badge";
@@ -160,6 +160,17 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
             >
               {post.status}
             </Badge>
+            
+            {/* Add the audio badge if the post has audio */}
+            {post.audio && (
+              <Badge 
+                variant="outline"
+                className="text-xs font-medium shadow-sm bg-primary/20 text-primary border-primary/30 flex items-center gap-1"
+              >
+                <Volume2 className="h-3 w-3" />
+                Audio
+              </Badge>
+            )}
           </div>
 
           {/* Image or placeholder */}
@@ -195,7 +206,7 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
         
         <CardContent className="px-6 py-4">
           {/* Metadata row */}
-          <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
+          <div className="flex items-center justify-between text-muted-foreground mb-3">
             <div className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
               <span className="text-xs">{formattedDate}</span>
@@ -235,13 +246,20 @@ export function NewsPostCard({ post, onViewDetails }: NewsPostCardProps) {
           </div>
           
           {/* Warning badges */}
-          {post.fakeVoice && (
-            <div className="mt-3">
+          <div className="mt-3 flex flex-wrap gap-2">
+            {post.fakeVoice && (
               <Badge variant="destructive" className="text-xs">
                 Fake Voice Detected
               </Badge>
-            </div>
-          )}
+            )}
+            
+            {post.audio && (
+              <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                <Volume2 className="h-3 w-3" />
+                Audio News
+              </Badge>
+            )}
+          </div>
         </CardContent>
         
         <CardFooter className="px-6 py-4 flex justify-between items-center border-t border-border/30">

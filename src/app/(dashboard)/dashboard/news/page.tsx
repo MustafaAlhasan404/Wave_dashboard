@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NewsPostCard } from "@/components/news/news-post-card";
-import { ArrowLeft, ChevronLeft, ChevronRight, Edit, Plus, RefreshCcw, Trash, LayoutGrid, List as ListIcon, InfoIcon, Users2, ShieldCheck, AlertCircle, Tag, GlobeIcon, ExternalLink, ImageIcon } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Edit, Plus, RefreshCcw, Trash, LayoutGrid, List as ListIcon, InfoIcon, Users2, ShieldCheck, AlertCircle, Tag, GlobeIcon, ExternalLink, ImageIcon, Volume2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ export default function NewsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [audioFilter, setAudioFilter] = useState(false);
   const [selectedPost, setSelectedPost] = useState<NewsItem | null>(null);
   const [isResending, setIsResending] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -72,12 +73,13 @@ export default function NewsPage() {
     };
   }, [selectedPost]);
   
-  // Fetch news posts with pagination
+  // Fetch news posts with pagination and optional audio filter
   const fetchNews = async (page = currentPage) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await newsApi.getNews(page, 10);
+      // Pass the audio filter parameter when it's enabled
+      const response = await newsApi.getNews(page, 12, audioFilter ? true : undefined);
       if (response.success && response.data) {
         setPosts(response.data.news);
         setTotalPages(response.data.pagination.totalPages);
@@ -96,7 +98,7 @@ export default function NewsPage() {
 
   useEffect(() => {
     fetchNews(currentPage);
-  }, [currentPage]);
+  }, [currentPage, audioFilter]);
 
   // Filter posts based on search query, category, and status
   const filteredPosts = posts.filter((post) => {
@@ -342,6 +344,13 @@ export default function NewsPage() {
                           Fake Voice
                         </Badge>
                       )}
+                      
+                      {selectedPost.audio && (
+                        <Badge variant="outline" className="text-xs font-medium shadow-sm bg-primary/20 text-primary border-primary/30 flex items-center gap-1">
+                          <Volume2 className="h-3 w-3" />
+                          Audio
+                        </Badge>
+                      )}
                     </div>
                     
                     <Button 
@@ -369,6 +378,13 @@ export default function NewsPage() {
                       {selectedPost.fakeVoice && (
                         <Badge variant="destructive" className="text-xs font-medium shadow-sm">
                           Fake Voice
+                        </Badge>
+                      )}
+                      
+                      {selectedPost.audio && (
+                        <Badge variant="outline" className="text-xs font-medium shadow-sm bg-primary/20 text-primary border-primary/30 flex items-center gap-1">
+                          <Volume2 className="h-3 w-3" />
+                          Audio
                         </Badge>
                       )}
                     </div>
@@ -461,6 +477,17 @@ export default function NewsPage() {
                       </p>
                       <p className="text-sm font-medium">{selectedPost.category}</p>
                     </div>
+                    
+                    {/* Add Audio News indicator if applicable */}
+                    {selectedPost.audio && (
+                      <div className="bg-muted/30 p-3 rounded-lg border border-border/40 hover:shadow-sm transition-shadow">
+                        <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                          <Volume2 className="h-3.5 w-3.5" />
+                          Audio News
+                        </p>
+                        <p className="text-sm font-medium text-primary">Available</p>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent my-5"></div>
@@ -572,6 +599,15 @@ export default function NewsPage() {
                 <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
             </Select>
+            
+            <Button
+              variant={audioFilter ? "default" : "outline"}
+              className="flex items-center gap-2"
+              onClick={() => setAudioFilter(!audioFilter)}
+            >
+              <Volume2 className="h-4 w-4" />
+              {audioFilter ? "Audio News" : "All News"}
+            </Button>
           </div>
         </div>
 

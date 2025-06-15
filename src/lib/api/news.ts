@@ -20,6 +20,7 @@ export interface NewsItem {
   publishedAt: string;
   status: "published" | "draft" | "archived";
   source: NewsSource;
+  audio?: boolean;
 }
 
 export interface NewsPaginationResponse {
@@ -82,8 +83,12 @@ export interface UploadImageResponse {
 }
 
 export const newsApi = {
-  getNews: async (page: number = 1, limit: number = 10) => {
-    return apiRequest<NewsPaginationResponse>(`/news?page=${page}&limit=${limit}`);
+  getNews: async (page: number = 1, limit: number = 10, audio?: boolean) => {
+    let url = `/news?page=${page}&limit=${limit}`;
+    if (audio) {
+      url += `&audio=true`;
+    }
+    return apiRequest<NewsPaginationResponse>(url);
   },
   
   getNewsById: async (id: string) => {

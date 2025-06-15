@@ -10,16 +10,24 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '10', 10);
+  const audio = searchParams.get('audio');
   
   // Get auth token from cookies
   const authToken = request.cookies.get('authToken')?.value;
   
   console.log("Auth token exists:", !!authToken);
-  console.log("Making request to:", `${API_URL}/news?page=${page}&limit=${limit}`);
+  
+  // Build the API URL with all necessary parameters
+  let apiUrl = `${API_URL}/news?page=${page}&limit=${limit}`;
+  if (audio === 'true') {
+    apiUrl += '&audio=true';
+  }
+  
+  console.log("Making request to:", apiUrl);
   
   try {
     // Make request to the actual API
-    const response = await fetch(`${API_URL}/news?page=${page}&limit=${limit}`, {
+    const response = await fetch(apiUrl, {
       headers: {
         'Authorization': `Bearer ${authToken}`,
         'Content-Type': 'application/json',
