@@ -97,9 +97,17 @@ export const newsApi = {
   },
 
   editNews: async (id: string, data: Partial<Omit<NewsItem, 'id' | 'source'>> & { link?: string; keywords?: string[] }) => {
+    // Create a clean copy of data without undefined values
+    const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as Record<string, any>);
+    
     return apiRequest<EditNewsResponse>(`/news/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(data)
+      body: JSON.stringify(cleanData)
     });
   },
   

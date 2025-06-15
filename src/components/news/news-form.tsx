@@ -58,6 +58,9 @@ export function NewsForm({
   // Add state to track form stage: 1 = Edit Form, 2 = Preview
   const [formStage, setFormStage] = useState(1);
 
+  // Track if fakeVoice has been changed by the user
+  const [fakeVoiceChanged, setFakeVoiceChanged] = useState(false);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -84,6 +87,7 @@ export function NewsForm({
   };
 
   const handleFakeVoiceChange = (checked: boolean) => {
+    setFakeVoiceChanged(true);
     setFormData((prev) => ({
       ...prev,
       fakeVoice: checked,
@@ -122,7 +126,16 @@ export function NewsForm({
       let response;
 
       if (isEditing && initialData?.id) {
-        response = await newsApi.editNews(initialData.id, formData);
+        // Create a copy of formData without fakeVoice
+        const { fakeVoice, ...dataWithoutFakeVoice } = formData;
+        
+        // Only include fakeVoice if it has been explicitly changed by the user
+        const dataToSend = fakeVoiceChanged 
+          ? { ...dataWithoutFakeVoice, fakeVoice }
+          : dataWithoutFakeVoice;
+        
+        console.log('Data being sent:', dataToSend);
+        response = await newsApi.editNews(initialData.id, dataToSend);
       } else {
         response = await newsApi.createNews(formData);
       }
